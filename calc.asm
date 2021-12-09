@@ -10,6 +10,12 @@ segment code
 
     ;INICIO DOS CODIGOS
 
+    ;mov dx, mensnum1
+    ;mov dx, [mensnum1]
+    ;mov ax, num1
+    ;push ax
+    ;mov ax, mensnum1
+    ;push ax
     call peganum1
     call imprimenovalinha
     ;mov dx,[num1]
@@ -21,10 +27,54 @@ segment code
     ;call imprimenumero
     
     call pegaop
+    mov dx,op
+    mov ah,9
+    int 21h
     
-    ;termina programa
+    mov ax,[op]
+    cmp ax,43
+    je soma
+    cmp ax,45
+    je subtracao
+    cmp ax,42
+    je multiplicacao
+    cmp ax,47
+    je divisao
+    
+termina:
     mov ah,4CH
     int 21h
+
+soma:
+    xor ax,ax
+    add ax,[num1]
+    add ax,[num2]
+    mov [res],ax
+    mov dx,[res]
+    call imprimenumero
+    jmp termina
+
+subtracao:
+    xor ax,ax
+    add ax,[num1]
+    sub ax,[num2]
+    mov [res],ax
+    mov dx,[res]
+    call imprimenumero
+    jmp termina
+
+multiplicacao:
+    mov ax, [num1]
+    mov bx, [num2]
+    mul bx
+    mov [res+2], dx
+    mov [res], ax
+    call imprimenumeromult
+    jmp termina
+
+divisao:
+    ;div [num1]
+    ;ret
 
 
 imprimenovalinha:
@@ -34,11 +84,25 @@ imprimenovalinha:
     ret
 
 peganum1:
+    ;pop dx
+    ;mov [callstore], dx
+
+    ;pop dx
+    ;mov [msg], dx
+
+    ;pop dx
+    ;mov [num], dx
+
     mov dx,mensnum1
+    ;mov bx, [msg]
+    ;mov dx,[bx]
     mov ah,9
     int 21h
     call leituranum
     mov [num1],dx
+    ;mov [num],dx
+    ;mov dx, [callstore]
+    ;push dx
     ret
 
 peganum2:
@@ -76,6 +140,39 @@ leituranum:
         jne loopleitura
     ret
 
+;storecontext:
+;    pushf
+;    push AX
+;    push BX
+;    push CX
+;    push DX
+
+;restorecontext:
+;    pop DX
+;    pop CX
+;    pop BX
+;    pop AX
+;    popf
+
+imprimenumeromult:
+; Save the context
+    pushf
+    push AX
+    push BX
+    push CX
+    push DX
+
+    mov DI,saidad
+    ;call bin2ascii
+    call printloop
+    mov byte [saidad+8], '$'
+
+    mov DX,saidad
+    mov AH,9h
+    int 21h
+
+    
+
 imprimenumero:
 ; Save the context
     pushf
@@ -86,6 +183,7 @@ imprimenumero:
 
     mov DI,saida
     call bin2ascii
+    ;call printloop
 
     mov DX,saida
     mov AH,9h
@@ -113,6 +211,7 @@ bin2ascii:
 Uni:
     add DX,0x0030
     mov byte [DI],DL
+    mov byte [DI+1],'$'
     ret
 
 Des:
@@ -123,6 +222,7 @@ Des:
     add AL,0x30
     mov byte [DI],AL
     mov byte [DI+1],AH
+    mov byte [DI+2],'$'
     ret
 
 Cen:
@@ -139,6 +239,7 @@ Cen:
     add AL,0x30
     mov byte [DI+1],AL  
     mov byte [DI+2],AH
+    mov byte [DI+3],'$'
     ret
 
 Mil:
@@ -161,6 +262,7 @@ Mil:
     add AL,0x30
     mov byte [DI+2],AL  
     mov byte [DI+3],AH
+    mov byte [DI+4],'$'
     ret
 
 Dezmil:
@@ -170,7 +272,7 @@ Dezmil:
     div BX
     add AL,0x30
     mov byte [DI],AL
-    mov AX,DX   
+    mov AX,DX
     mov DX,0
     mov BX,1000
     div BX
@@ -191,17 +293,67 @@ Dezmil:
     mov byte [DI+4],AH
     ret
 
+printloop:
+    mov cx, 0
+    mov ax, [res]
+    push ax
+    mov dx, [res+2]
+
+    start:
+        INC CX
+        mov AX,DX
+        mov DX,0
+        mov BX,10000
+        div BX
+        add AL,0x30
+        mov byte [DI],AL
+        INC DI
+        mov AX,DX
+        mov DX,0
+        mov BX,1000
+        div BX
+        add AL,0x30
+        mov byte [DI],AL
+        INC DI
+        mov AX,DX
+        mov BL,100
+        div BL
+        add AL,0x30
+        mov byte [DI],AL
+        INC DI
+        mov AL,AH
+        and AX,0x00FF
+        mov BL,10
+        div BL
+        add AH,0x30
+        add AL,0x30
+        mov byte [DI],AL
+        INC DI
+        mov byte [DI],AH
+        INC DI
+        pop dx
+        cmp CX, 1
+        je start
+    push dx
+    ret
+
 segment dados ;segmento de dados inicializados
     num1: dw 0
     num2: dw 0
     op: dw 0
         db 13,10,'$'
     res: dd 0
+    callstore: dw 0
+    msg: db 0
+        db 13,10,'$'
+    num: dw 0
     mensnum1: db 'Digite o primeiro numero: ','$'
     mensnum2: db 'Digite o segundo numero: ','$'
     mensop: db 'Escolha uma das operacoes (+ - / *): ','$'
     mensres: db 'A resposta da operacao é: ','$'
     saida: resb 5
+        db 13,10,'$'
+    saidad: resb 9
         db 13,10,'$'
 
 segment stack stack
