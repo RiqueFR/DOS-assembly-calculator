@@ -202,12 +202,21 @@ leituranum:
         mov word [negativomem], 1h
         jmp loopleitura
         continue:
+		cmp al,0Dh
+		jne nolinebreak
+		mov ax, dx
+		xor dx, dx
+		div bx
+		mov dx, ax
+		jmp outloop
+		nolinebreak:
         sub al,48
         xor ah,ah
         add dx,ax
         inc cx
         cmp cx,4
         jne loopleitura
+	outloop:
     mov ax, [negativomem]
     cmp ax, 0000h
     je continue2
