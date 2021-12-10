@@ -10,12 +10,6 @@ segment code
 
     ;INICIO DOS CODIGOS
 
-    ;mov dx, mensnum1
-    ;mov dx, [mensnum1]
-    ;mov ax, num1
-    ;push ax
-    ;mov ax, mensnum1
-    ;push ax
     call peganum1
     call imprimenovalinha
     ;mov dx,[num1]
@@ -27,9 +21,10 @@ segment code
     ;call imprimenumero
     
     call pegaop
+    call imprimenovalinha
     mov dx,op
-    mov ah,9
-    int 21h
+    ;mov ah,9
+    ;int 21h
     
     mov ax,[op]
     cmp ax,43
@@ -84,25 +79,11 @@ imprimenovalinha:
     ret
 
 peganum1:
-    ;pop dx
-    ;mov [callstore], dx
-
-    ;pop dx
-    ;mov [msg], dx
-
-    ;pop dx
-    ;mov [num], dx
-
     mov dx,mensnum1
-    ;mov bx, [msg]
-    ;mov dx,[bx]
     mov ah,9
     int 21h
     call leituranum
     mov [num1],dx
-    ;mov [num],dx
-    ;mov dx, [callstore]
-    ;push dx
     ret
 
 peganum2:
@@ -155,21 +136,13 @@ leituranum:
 ;    popf
 
 imprimenumeromult:
-; Save the context
-    pushf
-    push AX
-    push BX
-    push CX
-    push DX
-
-    mov DI,saidad
-    ;call bin2ascii
     call printloop
     mov byte [saidad+8], '$'
 
     mov DX,saidad
     mov AH,9h
     int 21h
+    ret
 
     
 
@@ -294,54 +267,36 @@ Dezmil:
     ret
 
 printloop:
-    mov cx, 0
-    mov ax, [res]
-    push ax
-    mov dx, [res+2]
+    mov cx, 7
 
-    start:
-        INC CX
-        mov AX,DX
-        mov DX,0
-        mov BX,10000
-        div BX
-        add AL,0x30
-        mov byte [DI],AL
-        INC DI
-        mov AX,DX
-        mov DX,0
-        mov BX,1000
-        div BX
-        add AL,0x30
-        mov byte [DI],AL
-        INC DI
-        mov AX,DX
-        mov BL,100
-        div BL
-        add AL,0x30
-        mov byte [DI],AL
-        INC DI
-        mov AL,AH
-        and AX,0x00FF
-        mov BL,10
-        div BL
-        add AH,0x30
-        add AL,0x30
-        mov byte [DI],AL
-        INC DI
-        mov byte [DI],AH
-        INC DI
-        pop dx
-        cmp CX, 1
-        je start
-    push dx
+    loop1:
+        mov bx,10
+        mov dx, 0
+
+        mov ax, [res+2]
+        div bx
+        mov [res+2], ax
+
+        mov ax, [res]
+        div bx
+        mov [res], ax
+        
+        add dl,30h
+        mov bx,cx
+        mov [saidad+bx],dl
+
+        loop loop1
     ret
 
 segment dados ;segmento de dados inicializados
     num1: dw 0
     num2: dw 0
+    ;num1: db 210, 04
+    ;num2: db 210, 04
     op: dw 0
         db 13,10,'$'
+    ;op: dw '*'
+    ;    db 13,10,'$'
     res: dd 0
     callstore: dw 0
     msg: db 0
