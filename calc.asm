@@ -31,6 +31,27 @@ segment code
     je soma
     cmp ax,45
     je subtracao
+    
+    push ax
+    mov dx, [negativo1]
+    cmp dx, 00h
+    je pulanum1
+    mov ax, [num1]
+    xor dx, dx
+    mov bx, -1
+    mul bx
+    mov [num1], ax
+    pulanum1:
+    mov dx, [negativo2]
+    cmp dx, 00h
+    je pulanum2
+    mov ax, [num2]
+    xor dx, dx
+    mov bx, -1
+    mul bx
+    mov [num2], ax
+    pulanum2:
+    pop ax
     cmp ax,42
     je multiplicacao
     cmp ax,47
@@ -44,8 +65,10 @@ soma:
     xor ax,ax
     add ax,[num1]
     add ax,[num2]
-    mov [res],ax
-    mov dx,[res]
+    mov [resultado],ax
+    mov dx,[resultado]
+    call imprimemensresultado
+    call menorquezero
     call imprimenumero
     jmp termina
 
@@ -53,24 +76,79 @@ subtracao:
     xor ax,ax
     add ax,[num1]
     sub ax,[num2]
-    mov [res],ax
-    mov dx,[res]
+    mov [resultado],ax
+    mov dx,[resultado]
+    call imprimemensresultado
+    call menorquezero
     call imprimenumero
     jmp termina
+
+menorquezero:
+    mov ax, [resultado]
+    cmp ax,0
+    jge final
+    xor dx, dx
+    mov bx, -1
+    mul bx
+    mov [resultado], ax
+    mov dx,'-'
+    mov ah,02h
+    int 21h
+    final:
+    ret
 
 multiplicacao:
     mov ax, [num1]
     mov bx, [num2]
     mul bx
-    mov [res+2], dx
-    mov [res], ax
-    call imprimenumeromult
+    mov [resultado+2], dx
+    mov [resultado], ax
+    call imprimemensresultado
+    call imprimenegativo
+    call imprimenumero
     jmp termina
 
 divisao:
-    ;div [num1]
-    ;ret
+    xor dx, dx
+    mov ax, [num1]
+    mov bx, [num2]
+    div bx
+    push dx
+    mov word [resultado+2], 0h
+    mov [resultado], ax
+    call imprimemensresultado
+    call imprimenegativo
+    call imprimenumero
+    call imprimenovalinha
+    pop dx
+    mov [resultado], dx
+    call imprimemensresto
+    call imprimenumero
+    call imprimenovalinha
+    jmp termina
 
+imprimenegativo:
+    mov ax, [negativo1]
+    mov dx, [negativo2]
+    cmp ax, dx
+    je final2
+    mov dx,'-'
+    mov ah,02h
+    int 21h
+    final2:
+    ret
+
+imprimemensresultado:
+    mov dx,mensres
+    mov ah,9
+    int 21h
+    ret
+
+imprimemensresto:
+    mov dx,mensresto
+    mov ah,9
+    int 21h
+    ret
 
 imprimenovalinha:
     mov dl, 10
@@ -84,6 +162,8 @@ peganum1:
     int 21h
     call leituranum
     mov [num1],dx
+    mov dx, [negativomem]
+    mov [negativo1], dx
     ret
 
 peganum2:
@@ -92,6 +172,8 @@ peganum2:
     int 21h
     call leituranum
     mov [num2],dx
+    mov dx, [negativomem]
+    mov [negativo2], dx
     ret
 
 pegaop:
@@ -103,167 +185,47 @@ pegaop:
     mov [op],al
     ret
 
+
 leituranum:
     mov cx,0
     mov bx,10
     mov dx,0
+    mov word [negativomem], 0h
     loopleitura:
-        mov ax,dx    
+        mov ax,dx
         mul bx
         mov dx,ax
         mov ah,01h
         int 21h
+        cmp al,45
+        jne continue
+        mov word [negativomem], 1h
+        jmp loopleitura
+        continue:
         sub al,48
         xor ah,ah
         add dx,ax
         inc cx
         cmp cx,4
         jne loopleitura
+    mov ax, [negativomem]
+    cmp ax, 0000h
+    je continue2
+    mov ax, dx
+    xor dx, dx
+    mov bx, -1
+    mul bx
+    mov dx, ax
+    continue2:
     ret
-
-;storecontext:
-;    pushf
-;    push AX
-;    push BX
-;    push CX
-;    push DX
-
-;restorecontext:
-;    pop DX
-;    pop CX
-;    pop BX
-;    pop AX
-;    popf
-
-imprimenumeromult:
-    call printloop
-    mov byte [saidad+8], '$'
-
-    mov DX,saidad
-    mov AH,9h
-    int 21h
-    ret
-
     
-
 imprimenumero:
-; Save the context
-    pushf
-    push AX
-    push BX
-    push CX
-    push DX
-
-    mov DI,saida
-    call bin2ascii
-    ;call printloop
+    call printloop
+    mov byte [saida+8], '$'
 
     mov DX,saida
     mov AH,9h
-    int 21h         
-
-; Upgrade the context
-    pop DX
-    pop CX
-    pop BX
-    pop AX
-    popf
-    ret
-
-bin2ascii:
-    cmp DX,10
-    jb  Uni
-    cmp DX,100 
-    jb  Des
-    cmp DX,1000
-    jb  Cen
-    cmp DX,10000
-    jb  Mil
-    JMP Dezmil
-
-Uni:
-    add DX,0x0030
-    mov byte [DI],DL
-    mov byte [DI+1],'$'
-    ret
-
-Des:
-    mov AX,DX
-    mov BL,10
-    div BL
-    add AH,0x30
-    add AL,0x30
-    mov byte [DI],AL
-    mov byte [DI+1],AH
-    mov byte [DI+2],'$'
-    ret
-
-Cen:
-    mov AX,DX
-    mov BL,100
-    div BL
-    add AL,0x30
-    mov byte [DI],AL
-    mov AL,AH
-    and AX,0x00FF
-    mov BL,10
-    div BL
-    add AH,0x30
-    add AL,0x30
-    mov byte [DI+1],AL  
-    mov byte [DI+2],AH
-    mov byte [DI+3],'$'
-    ret
-
-Mil:
-    mov AX,DX
-    mov DX,0
-    mov BX,1000
-    div BX
-    add AL,0x30
-    mov byte [DI],AL
-    mov AX,DX
-    mov BL,100
-    div BL
-    add AL,0x30
-    mov byte [DI+1],AL  
-    mov AL,AH
-    and AX,0x00FF
-    mov BL,10
-    div BL
-    add AH,0x30
-    add AL,0x30
-    mov byte [DI+2],AL  
-    mov byte [DI+3],AH
-    mov byte [DI+4],'$'
-    ret
-
-Dezmil:
-    mov AX,DX
-    mov DX,0
-    mov BX,10000
-    div BX
-    add AL,0x30
-    mov byte [DI],AL
-    mov AX,DX
-    mov DX,0
-    mov BX,1000
-    div BX
-    add AL,0x30
-    mov byte [DI+1],AL
-    mov AX,DX
-    mov BL,100
-    div BL
-    add AL,0x30
-    mov byte [DI+2],AL  
-    mov AL,AH
-    and AX,0x00FF
-    mov BL,10
-    div BL
-    add AH,0x30
-    add AL,0x30
-    mov byte [DI+3],AL
-    mov byte [DI+4],AH
+    int 21h
     ret
 
 printloop:
@@ -273,31 +235,34 @@ printloop:
         mov bx,10
         mov dx, 0
 
-        mov ax, [res+2]
+        mov ax, [resultado+2]
         div bx
-        mov [res+2], ax
+        mov [resultado+2], ax
 
-        mov ax, [res]
+        mov ax, [resultado]
         div bx
-        mov [res], ax
+        mov [resultado], ax
         
         add dl,30h
         mov bx,cx
-        mov [saidad+bx],dl
+        mov [saida+bx],dl
 
         loop loop1
     ret
 
 segment dados ;segmento de dados inicializados
+    negativomem: dw 0
+    negativo1: dw 0
+    negativo2: dw 0
     num1: dw 0
     num2: dw 0
-    ;num1: db 210, 04
-    ;num2: db 210, 04
+    ;num1: db 25, 0h
+    ;num2: db 4, 0h
     op: dw 0
         db 13,10,'$'
-    ;op: dw '*'
+    ;op: dw '/'
     ;    db 13,10,'$'
-    res: dd 0
+    resultado: dd 0
     callstore: dw 0
     msg: db 0
         db 13,10,'$'
@@ -305,10 +270,9 @@ segment dados ;segmento de dados inicializados
     mensnum1: db 'Digite o primeiro numero: ','$'
     mensnum2: db 'Digite o segundo numero: ','$'
     mensop: db 'Escolha uma das operacoes (+ - / *): ','$'
-    mensres: db 'A resposta da operacao é: ','$'
-    saida: resb 5
-        db 13,10,'$'
-    saidad: resb 9
+    mensres: db 'A resposta da operacao eh: ','$'
+    mensresto: db 'O resto da divisao eh: ','$'
+    saida: resb 9
         db 13,10,'$'
 
 segment stack stack
