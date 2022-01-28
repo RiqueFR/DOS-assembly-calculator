@@ -112,6 +112,8 @@ divisao:
     xor dx, dx
     mov ax, [num1]
     mov bx, [num2]
+    cmp bx, 0
+    je imprimedivzero
     div bx
     push dx
     mov word [resultado+2], 0h
@@ -149,6 +151,12 @@ imprimemensresto:
     mov ah,9
     int 21h
     ret
+
+imprimedivzero:
+    mov dx,divzero
+    mov ah,9
+    int 21h
+    jmp termina
 
 imprimenovalinha:
     mov dl, 10
@@ -281,6 +289,7 @@ segment dados ;segmento de dados inicializados
     mensop: db 'Escolha uma das operacoes (+ - / *): ','$'
     mensres: db 'A resposta da operacao eh: ','$'
     mensresto: db 'O resto da divisao eh: ','$'
+    divzero: db 'ERRO: DIVISAO POR ZERO','$'
     saida: resb 10
         db 13,10,'$'
 
