@@ -230,7 +230,7 @@ leituranum:
     
 imprimenumero:
     call printloop
-    mov byte [saida+8], '$'
+    mov byte [saida+9], '$'
 
     mov DX,saida
     mov AH,9h
@@ -238,7 +238,7 @@ imprimenumero:
     ret
 
 printloop:
-    mov cx, 7
+    mov cx, 8
 
     loop1:
         mov bx,10
@@ -281,7 +281,7 @@ segment dados ;segmento de dados inicializados
     mensop: db 'Escolha uma das operacoes (+ - / *): ','$'
     mensres: db 'A resposta da operacao eh: ','$'
     mensresto: db 'O resto da divisao eh: ','$'
-    saida: resb 9
+    saida: resb 10
         db 13,10,'$'
 
 segment stack stack
